@@ -1,0 +1,6 @@
+ID Produto,Nome do Item,Categoria,Quantidade,Preço Unitário (R$),Fornecedor,Localização
+PROD-001,Notebook Dell XPS,Informática,15,"8.500,00",Dell Brasil,Corredor A1
+PROD-002,Mouse Logitech MX,Periféricos,42,"450,00",Logi Distribuidora,Prateleira B3
+PROD-003,"Monitor 27"" LG",Monitores,8,"1.200,00",LG Electronics,Corredor A2
+PROD-004,Teclado Mecânico,Periféricos,25,"320,00",TechSupply,Prateleira B1
+PROD-005,Cabo HDMI 2.0,Cabos,120,"35,00",Global Connect,Gaveta C5
