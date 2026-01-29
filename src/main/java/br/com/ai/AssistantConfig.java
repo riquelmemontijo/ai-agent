@@ -15,10 +15,10 @@ public class AssistantConfig {
     @Bean
     public ChatLanguageModel chatLanguageModel() {
         return GoogleAiGeminiChatModel.builder()
-                .apiKey("")
+                .apiKey("AIzaSyBbeXPmO-nff4EC1Qwr2sirioxRyjnNEXU")
                 .modelName("gemini-3-flash-preview")
                 .timeout(java.time.Duration.ofSeconds(60))
-                .maxRetries(5)
+                .maxRetries(10)
                 .build();
     }
 

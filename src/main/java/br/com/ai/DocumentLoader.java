@@ -1,71 +1,46 @@
 package br.com.ai;
 
-import jakarta.annotation.PostConstruct;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
-public class DocumentLoader {
+public class DocumentLoader implements CommandLineRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(DocumentLoader.class);
+    private static final Logger logger = LoggerFactory.getLogger(DocumentLoader.class);
 
-    private final DocumentIngestionService documentIngestionService;
+    @Autowired
+    private DocumentIngestionService documentIngestionService;
 
-    @Value("${documents.directory:src/main/resources/documents}")
-    private String documentsDirectory;
-
-    public DocumentLoader(DocumentIngestionService documentIngestionService) {
-        this.documentIngestionService = documentIngestionService;
+    @Override
+    public void run(String... args) throws Exception {
+        logger.info("Carregando documentos...");
+        List<Document> documents = loadDocumentsFromResources();
+        documentIngestionService.ingestDocuments(documents);
+        logger.info("{} documentos carregados.", documents.size());
     }
 
-    @PostConstruct
-    public void loadDocumentsOnStartup() {
-        Path documentsPath = Paths.get(documentsDirectory);
+    private List<Document> loadDocumentsFromResources() throws IOException {
+        List<Document> documents = new ArrayList<>();
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources = resolver.getResources("classpath:documents/*.md");
 
-        if (!Files.exists(documentsPath)) {
-            log.info("Diretório de documentos não existe. Criando: {}", documentsPath);
-            try {
-                Files.createDirectories(documentsPath);
-                log.info("Diretório criado. Adicione documentos em: {}", documentsPath.toAbsolutePath());
-            } catch (IOException e) {
-                log.error("Erro ao criar diretório de documentos", e);
-            }
-            return;
+        for (Resource resource : resources) {
+            Path path = Path.of(resource.getURI());
+            documents.add(FileSystemDocumentLoader.loadDocument(path));
         }
 
-        log.info("Carregando documentos do diretório: {}", documentsPath.toAbsolutePath());
-
-        try (Stream<Path> paths = Files.walk(documentsPath)) {
-            paths.filter(Files::isRegularFile)
-                 .filter(path -> {
-                     String fileName = path.getFileName().toString().toLowerCase();
-                     return fileName.endsWith(".txt") ||
-                            fileName.endsWith(".pdf") ||
-                            fileName.endsWith(".doc") ||
-                            fileName.endsWith(".docx");
-                 })
-                 .forEach(path -> {
-                     try {
-                         log.info("Processando documento: {}", path.getFileName());
-                         documentIngestionService.ingestDocument(path);
-                         log.info("Documento processado com sucesso: {}", path.getFileName());
-                     } catch (Exception e) {
-                         log.error("Erro ao processar documento: {}", path.getFileName(), e);
-                     }
-                 });
-
-            log.info("Carregamento de documentos concluído!");
-
-        } catch (IOException e) {
-            log.error("Erro ao ler diretório de documentos", e);
-        }
+        return documents;
     }
 }
